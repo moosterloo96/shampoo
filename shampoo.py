@@ -198,8 +198,6 @@ class Model:
         self.desType = "new" # Use old (Piso+ 2015) or new (Cuppen+ 2017) desorption formalism.
         self.flag = False # The warning flag if our mass change in ice becomes too large.
         self.delta_t_floor = float(self.paraDict["delta_t_floor"]) # Floor to variable timestep in yr.
-
-        #print(vars(self))
         
         if self.verbose>-1:
             toc = process_time()
@@ -249,20 +247,6 @@ class Model:
             elif paraDict[item]=="False":
                 paraDict[item] = False
     
-#         for item in paraDict.keys():
-            
-#             if "True" in paraDict[item]:
-#                 paradict[item] = True
-#             elif "False" in paraDict[item]:
-#                 paraDict[item] = False
-#             elif any(paraDict[item]) in range(0,9):
-#                 if "." in paraDict[item]:
-#                     paraDict[item] = float(paraDict[item])
-#                 else:
-#                     paraDict[item] = int(paraDict[item])
-        
-        
-        
         return paraDict
             
     
@@ -383,9 +367,6 @@ class Model:
 
         for name in ["dDdz", "dDdr", "drhogdz", "drhogdr"]:
             self.disk.interpol[name] = RectBivariateSpline(self.disk.rVals, self.disk.zVals, self.disk.data[name], kx=self.disk.order, ky=self.disk.order)
-        
-       # print(self.disk.data["dDdz"],self.disk.data["dDdr"])
-
 
         tic = process_time()
 
@@ -506,10 +487,6 @@ class Model:
         
         self.probeEnvironment(r_in, z_in, t_in, inside_loop=False)
         r, z, t = self.unpackVars(r_in, z_in, t_in) # Convert input from AU and kyr to SI units.
-        
-        
-        #### Inform initial ice mass from background model!!!
-                
             
         # Calculate initial individual and total ice budget on the monomer.    
         iceTot = 0
@@ -517,7 +494,6 @@ class Model:
             rhoDust = self.environment["rhod"] # Gives the dust mass density (kg/m3)
             rhoIce = self.environment["iceAbun"+self.disk.iceList[n]]*self.para["m"+self.disk.iceList[n]]
             mIce = rhoIce/rhoDust*self.monomer.prop["mMon"] # Ice mass in kg 
-            #print(self.disk.iceList[n], "rhodust:",rhoDust, "rhoice:", rhoIce, "ratio:", mIce)########################################################
             if self.pisoBenchmark:
                 if self.disk.iceList[n]=="H2O":
                     mIce = self.monomer.prop["mMon"]
@@ -537,19 +513,6 @@ class Model:
                 self.monomer.ice_sol["tds"+self.disk.iceList[n]] = [self.rateDesorptionThermal(t, r, z, self.disk.iceList[n], init=True)]
                 self.monomer.ice_sol["pds"+self.disk.iceList[n]] = [self.rateDesorptionPhoto(t, r, z, self.disk.iceList[n], init=True)]
                 self.monomer.ice_sol["qFactor"+self.disk.iceList[n]] = [np.nan]
-        # Calculate the initial element budgets
-        #for n in range(self.iceNum):
-            
-            # We also calculate the change in element mass contained in the ice
-            # the element gain/loss rate in monomer mass/s
-            #iceMass = (self.monomer.ice_sol[self.disk.iceList[n]])[-1]
-            #eleNew = self.calcElementChange(iceMass, self.disk.iceList[n])
-        
-            #if n==0:
-            #    self.monomer.ele_sol = np.array([eleNew])
-            #else:
-            #    self.monomer.ele_sol[-1,:] += np.where(eleNew<0, np.zeros(5), eleNew)
-
     
     
     def evaluateQuant(self, name, r, z):
@@ -561,9 +524,6 @@ class Model:
 
         rEva = r/self.auTOm
         
-        #if (self.cieslaBenchmark and (name!="rhog")):
-           # zEva = 0*r
-        #else:
         zEva = abs(z/r)
 
         if (name in ["rhog", "rhod", "nd", "chiRT"] or (name[0:3] in ["gas", "ice", "tot"]) or (name[0:5] in ["rhoda", "numda"]) or ("Abun" in name)):
@@ -574,14 +534,11 @@ class Model:
                 quant =  20000*((rEva)**(-1))/(H*np.sqrt(2*np.pi))
   
         elif name in ["dDdz", "drhogdz"]:
-            #print(type(z))######################
             if isinstance(z, (np.floating, float)):
-                #print(self.disk.interpol[name](rEva, zEva, grid=False))##########################
                 if z<0:
                     quant = -self.disk.interpol[name](rEva, zEva, grid=False)
                 else:
                     quant = self.disk.interpol[name](rEva, zEva, grid=False)
-                #print(quant)##############
             else:
                 quant = self.disk.interpol[name](rEva, zEva, grid=False)
                 quant[zEva<0] *= -1   
@@ -629,9 +586,6 @@ class Model:
         mfp = 1/den
 
         # Calculate the stokesNumber--------
-
-
-        #gasDensity = 10**(self.rhoD(abs(z)/self.auTOm))
         if size==None:
             size = self.monomer.homeAggregate.prop["sAgg"]
             density = self.monomer.homeAggregate.prop["rhoAgg"]
@@ -645,10 +599,6 @@ class Model:
         stokesSt = np.sqrt(np.pi/8)*num/den*omega
         epsteiSt = np.sqrt(np.pi/8)*size*density/(soundspeed*gasDensity)*omega
         stokesNumber = np.where(cond, stokesSt, epsteiSt)	
-        # Note that we here implicitly calculate the pressure scale height as cs/omega
-        # NOTE THAT THIS IS WRONG
-        #num = self.para["a_settle"]*soundspeed0**2
-        #den = omega
 
         gDiffusivity = self.para["a_settle"]*soundspeed*self.calculateScaleHeight(rVals, method="mcfost", kind="gas", size=None)
 
@@ -664,7 +614,6 @@ class Model:
         r: Distance from star in m.
         Calculates the scale height in m.
         """
-
         # Alternatively, we calculate the pressure scale height
         if method=="pressure":
 
@@ -682,12 +631,6 @@ class Model:
         if (kind=="dust" or kind=="dustProdimo"):
             fact = np.sqrt(self.para["a_settle"]/(np.sqrt(3)*self.Stokes(0, r, 0, size=size, midplane=True)+self.para["a_settle"])) # Using the expression of Youdin & Lithwick 2007
             H *= fact
-        # elif kind=="dustProdimo":
-        #     fact = min([np.sqrt(self.para["a_settle"]/(self.Stokes(0, r, 0, size=size, midplane=True)*np.sqrt(3))),1]) # Using the expression of Dubrulle+ 1995
-        #     H *= fact
-        #if kind in ["dust","dustProdimo"]:
-        #    print("Input r: ",r)
-        #    print("Hp/Hg:", fact, "St:", self.Stokes(0, r, 0, size=size, midplane=True), "alpha:", self.para["a_settle"])
         return H
 
     
@@ -785,7 +728,6 @@ class Model:
         else:
             soundspeed = self.environment["soundspeed"]
 
-        #soundspeed = self.environment["soundspeed"]
         omega = self.Omega(t, r, z)
 
         nuT = self.para["a_settle"]*soundspeed*self.calculateScaleHeight(r, method="mcfost", kind="gas", size=None)
@@ -831,7 +773,7 @@ class Model:
         else:
 
             soundspeed = self.environment["soundspeed"]
-            eta = (soundspeed/(r*self.Omega(t,r,z)))**2 #CHECK WHERE THIS COMES FROM (Armitage 2010?)
+            eta = (soundspeed/(r*self.Omega(t,r,z)))**2
 
         return eta
 
@@ -876,10 +818,6 @@ class Model:
             soundspeed = self.environment["soundspeed"]
             gasDensity = self.environment["rhog"]
 
-        #soundspeed = self.para["HD"]*self.Omega(t,r,z)
-            
-        
-        #gasDensity = 10**(self.rhoD(abs(z)/self.auTOm))
         omega = self.Omega(t, r, z)
 
         mfp = self.meanFreePath(t, r, z)
@@ -918,22 +856,10 @@ class Model:
         """
         Calculated according to Krijt+ 2018 and Ciesla 2010
         """
-
-        # we evaluate the sound speed at the midplane
-
-
         soundspeed = self.environment["soundspeed"] # maybe do this at midplane?
 
-        #stokesNumber = self.Stokes(t,r,z)############################################################################
-        #scaleHeight = self.scaleHeight(r, method="pressure")
-
-        #omega = self.Omega(t, r, z)
-
         # Note that we here implicitly calculate the pressure scale height as cs/omega
-        num = self.para["a_settle"]*soundspeed*self.calculateScaleHeight(r, method="mcfost", kind="gas")
-        #den = omega#*(1+stokesNumber) this is wrong
-
-        gDiffusivity = num
+        gDiffusivity = self.para["a_settle"]*soundspeed*self.calculateScaleHeight(r, method="mcfost", kind="gas")
 
         return gDiffusivity
 
@@ -966,7 +892,7 @@ class Model:
         else:
             stokesNumber = stokes
         v_z = -self.Omega(t,r,z)*z*stokesNumber
-        #print(self.Omega(t,r,z), z/self.auTOm, self.Stokes(t,r,z, size))
+
         return v_z
 
     
@@ -982,8 +908,6 @@ class Model:
         term2b = self.environment["drhogdr"]
 
         v_eff_r = v_r + term1 + term2a*term2b
-        #if t==0:
-        #	print("vr", v_r, "v_eff_r", v_eff_r)
 
         return v_eff_r
 
@@ -1000,8 +924,6 @@ class Model:
         term2b = self.environment["drhogdz"]
 
         v_eff_z = v_z + term1 + term2a*term2b
-        #if t==0:
-        #print("vz", v_z, "v_eff_z", v_eff_z, term1, term2a, term2b)
 
         return v_eff_z
 
@@ -1018,9 +940,6 @@ class Model:
         if self.diffusion==True:
             randZ = rand*np.sqrt(2/self.xi*self.particleDiffusivity(t,r,z)*self.delta_t)
             z_der = self.velocity_eff_z(t,r,z)*self.delta_t + randZ
-            #print("randz = ", randZ)
-            #print("v_eff_z_final = ", self.velocity_eff_z(t,r,z)*self.delta_t)
-
         elif self.diffusion==False:
             z_der = self.velocity_z(t,r,z)*self.delta_t
 
@@ -1028,7 +947,6 @@ class Model:
         
         if self.fixZ:
             z_der *= 0
-        #print("z_der",z_der)
         return z_der
 
     
@@ -1042,17 +960,12 @@ class Model:
 
         elif self.diffusion==False:
             r_der = self.velocity_r(t,r,z)*self.delta_t
-        ################################################################################ Comment the thing below out; it is meant for debugging purposes
-#         rate = 25
-#         if t_in<.5:
-#             r_der = -rate*self.delta_t
-#         else:
-#             r_der = rate*self.delta_t
+
         r_der /= self.auTOm # convert from m to AU
 
         if self.fixR:
             r_der *= 0
-        #print("r_der",r_der)
+
         return r_der 
     
     
@@ -1108,9 +1021,6 @@ class Model:
         Calculates the relative velocity contribution due to differences in azimuthal velocity.
         """
     
-        #v1r = self.velocity_r(t, r, z, size=self.para["sLarge"], stokes=self.vrel_Stlarge)
-        #v2r = self.velocity_r(t, r, z, size=self.para["sSmall"], stokes=self.vrel_Stsmall)
-    
         v1 = v1r/(2*self.vrel_Stlarge)
         v2 = v2r/(2*self.vrel_Stsmall)
     
@@ -1125,17 +1035,11 @@ class Model:
         Calculates the relative velocity difference due to turbulence using the approximations presented 
         by Ormel & Cuzzi 2007
         """
-    
-       # pRe = model.ReynoldsP(t, r, z, size=sagg)
-    
-        #if pRe>=1:
-        #    vTM = 0
-        #else:
         omega = self.Omega(t, r, z)
         Re = self.ReynoldsT(t, r, z, midplane=True)
     
         tstop = self.vrel_Stlarge/omega
-        omg = 1/omega #==equal to tL when following Ormel & Cuzzi 2007.
+        omg = 1/omega #== tL when following Ormel & Cuzzi 2007.
         teta = omg/np.sqrt(Re) # tL = 1/omega
         
 
@@ -1159,30 +1063,21 @@ class Model:
 
         sagg = self.monomer.homeAggregate.prop["sAgg"]
         scol = self.monomer.homeAggregate.prop["sCol"]
-        #magg = self.monomer.homeAggregate.prop["mAgg"]
-        #mcol = self.monomer.homeAggregate.prop["mCol"]
     
         if scol>sagg:
-            denSmall = 2094#self.monomer.homeAggregate.prop["rhoAgg"]
+            denSmall = 2094
             denLarge = 2094
             self.para["sLarge"] = scol
-            self.para["sSmall"] = sagg
-            #self.para["mLarge"] = #mcol
-            #self.para["mSmall"] = #magg
-            
+            self.para["sSmall"] = sagg 
         else:
             denSmall = 2094
-            denLarge = 2094#self.monomer.homeAggregate.prop["rhoAgg"]
+            denLarge = 2094
             self.para["sLarge"] = sagg
             self.para["sSmall"] = scol
-            #self.para["mLarge"] = #magg
-            #self.para["mSmall"] = #mcol
             
         self.para["mSmall"] = 4/3*np.pi*denSmall*self.para["sSmall"]**3#magg
         self.para["mLarge"] = 4/3*np.pi*denLarge*self.para["sLarge"]**3#mcol
         
-    
-        #self.probeEnvironment(r/self.auTOm, z/self.auTOm, t/(1e3*self.sTOyr), inside_loop=False)
         if doPrint:
             print("Properties passed:")
             print("sagg: ",sagg, "scol:", scol)
@@ -1241,18 +1136,11 @@ class Model:
             s = self.monomer.homeAggregate.prop["sCol"]
     
         name = "numda"+str(np.argmin(abs(self.grainSizes-s)))
-        #print(r,z)
-        
-        #tocn = process_time()
+
         nDen = self.evaluateQuant(name, r, z)
-        #ticn = process_time()
-        #print("nDen: {:.2e} s".format(ticn-tocn))
-        
-        
-        #tocv = process_time()
+
         vRel = self.calcTotVRel(t, r, z)
-        #ticv = process_time()
-        #print("vrel: {:.2e} s".format(ticv-tocv))
+
         
         sig = self.sigCol(t, r, z)
         
@@ -1260,7 +1148,7 @@ class Model:
             print("nDen = {:.2e} /m3".format(nDen), "vRel = {:.2e} m/s".format(vRel), "sig = {:.2e} m2".format(sig))
 
         colrate = nDen*vRel*sig
-        #print("Ccol:",colrate,"   nDen:",nDen,"   vRel:",vRel,"   sig",sig )
+
         return colrate
 
     def calcColRates(self, t_now, r_now ,z_now, size=None):
@@ -1276,21 +1164,15 @@ class Model:
             sAgg = self.monomer.homeAggregate.prop["sAgg"]
         else:
             sAgg = size
-            #self.monomer.homeAggregate.prop["sAgg"] = size
-            #self.monomer.homeAggregate.prop["sMon"] = size
-       # print("Home aggregate size:", sAgg)
 
         # calculate the unaltered collision rates
         self.colRates = np.zeros(self.para["nsize"])
 
         for s in range(self.para["nsize"]):
             self.monomer.homeAggregate.prop["sCol"] = sizes[s]
-            #self.monomer.homeAggregate.prop["mCol"] = 4/3*np.pi*self.monomer.homeAggregate.prop["sCol"]**3*self.monomer.homeAggregate.prop["rhoAgg"]
             self.colRates[s] = self.collisionRate(t, r, z)
            
-
         # determine whether effective cross section is needed
-
         volFact = (sizes/sAgg)**3
 
         effTrue = volFact/self.feps
@@ -1329,10 +1211,7 @@ class Model:
         else:
             
             nSpecies = self.environment["gasAbun"+iceName]
-            
-            #if iceName =="NH3":
-            #    nSpecies /= 1e2
-            
+
             if dustT==None:
                 dustT = self.environment["Td"]
             vthermal = self.thermalGasVelocity(t, r, z, species=iceName, gasT=gasT)
@@ -1441,7 +1320,6 @@ class Model:
                     iceAmount = iceList[iceName]
                 
                 # Divide by surface area of monomer to calculate # of spots per m2   
-                #corfactNum = self.environment["rhod"]
                 corfactDen = self.para["m"+iceName]*4*np.pi*(self.monomer.prop["sMon"])**2
                 
                 nspots = iceAmount/corfactDen
@@ -1514,11 +1392,6 @@ class Model:
         """
         
         qFactor = (np.log10(tau)-np.log10(self.para["tauMinInt"]))/(np.log10(self.para["tauMaxInt"])-np.log10(self.para["tauMinInt"]))        
-        
-        #if self.environment["iceAbun"+iceName]>0.5*self.environment["gasAbun"+iceName]:
-        #    qFactor = 1
-        #else:
-        #    qFactor = 0    
                
         return qFactor
     
@@ -1546,12 +1419,10 @@ class Model:
         #print(tau, self.para["tauMinInt"],self.para["tauMaxInt"])
         if tau>self.para["tauMaxInt"]:
             # In this case, diffusion goes very slow.
-            #print("q =",0)
             qFactor = 1
             rateDesI = 0
         elif tau<self.para["tauMinInt"]:
             # In this case, diffusion goes very fast.
-            #print("q =",1)
             qFactor = 0
             rateDesI = self.rateDesorptionThermal(t, r, z, iceName, dustT=None, iceList=iceList)
         else:
@@ -1611,8 +1482,6 @@ class Model:
         r_in, z_in, t_in = self.unpackVars(r_now, z_now,t_now)
 
         # For now we calculate the gas/dust density, temperature and soundspeed.
-
-
         for cond in ["rhog", "rhod", "Tg", "Td", "nd", "soundspeed", "chiRT", "nd"]:
             self.environment[cond] = self.evaluateQuant(cond, r_in, z_in)	
         
@@ -1634,7 +1503,7 @@ class Model:
         """
         Stores the environment in dedicated arrays.
         """
-        #print(self.environment)
+
         r_in, z_in, t_in = self.unpackVars(r_now, z_now,t_now)
         if t_in==0:
             for cond in self.trackListEnv:
@@ -1670,15 +1539,7 @@ class Model:
         """
         Calculates the displacement of the home aggregate/monomer
         """
-
-#         succes=False
-
-#         failcount = 0
-#         maxFail = 20
-
-#         while (succes==False)and(failcount<maxFail):
-
-            # We here take abs(z) as we assume our disk to be symmetric around the midplane.
+        # We here take abs(z) as we assume our disk to be symmetric around the midplane.
         
         randr, randz = 2*np.random.rand(2)-1
 
@@ -1721,9 +1582,6 @@ class Model:
             print("The monomer has drifted above abs(z/r)=0.5.")
             z_new = 0.5*r_new
             
-            
-        
-
         return r_new, z_new
 
 #################################################################################################
@@ -1736,7 +1594,7 @@ class Model:
         Calculates the probability of a collision happening in the time interval. Returns effective probability.
         """
 
-        delT = self.delta_t#model.feps*np.min(1/model.effColRates) #### change this to match global timestep
+        delT = self.delta_t
         
         self.PCol = 1-np.exp(-delT*np.sum(self.colRates))
         self.effPCol = 1-np.exp(-delT*np.sum(self.effColRates))
@@ -1817,8 +1675,7 @@ class Model:
             size = self.grainSizes[ind]
             self.monomer.homeAggregate.prop["NCol"] = 1/self.effectiveFact[ind]
 
-         #determines cloud size
-        #print("Cloud size of collision partner: "+str(self.monomer.homeAggregate.prop["NCol"]))
+        # Determines cloud size
         self.monomer.homeAggregate.prop["sCol"] = size
         self.monomer.homeAggregate.prop["mCol"] = 4/3*np.pi*self.monomer.homeAggregate.prop["sCol"]**3*self.monomer.homeAggregate.prop["rhoAgg"]
         
@@ -1835,7 +1692,7 @@ class Model:
         
         vRel = self.calcTotVRel(t, r, z, doPrint=False) ### Note that calcTotVrel takes input in SI
         self.vRel = vRel
-        #print(vRel)
+
         cond = 99
         # Determine whether fragmentation occurs
         if vRel>=self.para["v_frag"]:
@@ -1856,8 +1713,6 @@ class Model:
             self.seedNo += 1
             np.random.seed(self.seedNo)
         
-        # if (vRel>self.para["v_frag"]):
-        #     print(t/(self.sTOyr*1e3), vRel, fragmentation, cond)
         if fragmentation: # if fragmentation we need to pick a new, smaller size of our home aggregate
 
             # does catastrophic disruption or erosion occur?
@@ -1870,67 +1725,53 @@ class Model:
             if massRat<=self.mrat:
                 # In this case the home aggregate is being eroded.
 
-                    mTot = 2*mCol*self.monomer.homeAggregate.prop["NCol"] # multiply with cloud size,
+                mTot = 2*mCol*self.monomer.homeAggregate.prop["NCol"] # multiply with cloud size,
 
-                    # Is the monomer in the excavated mass? Two masses worth of mCol are excavated from 
-                    # the home aggregate. Assuming random location,
-                    # the ejection probability is given by:
+                # Is the monomer in the excavated mass? Two masses worth of mCol are excavated from 
+                # the home aggregate. Assuming random location,
+                # the ejection probability is given by:
 
-                    pNotEj = (1-mTot/mAgg)**self.monomer.homeAggregate.prop["NCol"] # probability of not 
-                    #being ejected
-                    pEj = 1-pNotEj
-                    #print("Ejection probability", pEj)
+                pNotEj = (1-mTot/mAgg)**self.monomer.homeAggregate.prop["NCol"] # probability of not 
+                #being ejected
+                pEj = 1-pNotEj
 
-                    if np.random.rand()<=pEj:     # the monomer is ejected and we need to determine the size of 
-                                        # the fragment.           
-                        
-                        mMax = mCol
-                        self.monomer.homeAggregate.prop["mAgg"] = self.determineFragmentMass(mMax)
-                        message = "home aggregate eroded, monomer ejected"
-                        outcome = "ejection"
-                        interaction_id = 4
-                        
-                    else: # some mass is eroded away from the home aggregate, but the monomer remains in 
-                            #the home aggregate.
-                        self.monomer.homeAggregate.prop["mAgg"] -= mTot/2 
-                        message = "home aggregate eroded by {:.1e} particles, monomer remained".format(self.monomer.homeAggregate.prop["NCol"])
-                        outcome = "erosion"
-                        interaction_id = 3
+                if np.random.rand()<=pEj: # the monomer is ejected and we need to determine the size of the fragment.           
+                    mMax = mCol
+                    self.monomer.homeAggregate.prop["mAgg"] = self.determineFragmentMass(mMax)
+                    message = "home aggregate eroded, monomer ejected"
+                    outcome = "ejection"
+                    interaction_id = 4
+                else: # some mass is eroded away from the home aggregate, but the monomer remains in the home aggregate.
+                    self.monomer.homeAggregate.prop["mAgg"] -= mTot/2 
+                    message = "home aggregate eroded by {:.1e} particles, monomer remained".format(self.monomer.homeAggregate.prop["NCol"])
+                    outcome = "erosion"
+                    interaction_id = 3
 
-                    self.seedNo += 1
-                    np.random.seed(self.seedNo)
+                self.seedNo += 1
+                np.random.seed(self.seedNo)
 
             elif massRat>=1/self.mrat:
                 # In this case the home aggregate is the eroding particle.
                 # Note that in this case, the collision partner is never a cloud.
-
-                    mTot = 2*mAgg
-
-                    # Is the monomer in the excavated mass? ---> Assume no? May read a bit better into this.
-                    # - Brauer, Dullemond & Henning (2008)  
-                    # - Hasegawa et al. (2021) - Simulations, v_frag is function of mass ratio. 
-                    # For now, lets assume bullets: 2x mAgg of the collision partner are excavated such that the collision partner is the new home aggregate.
-                    # the impactor burries itself deep enough such that the excavated mass is solely originating from the collision partner.
-                    self.monomer.homeAggregate.prop["mAgg"] = self.monomer.homeAggregate.prop["mCol"] - mTot/2
-                    message = "home aggregate impacted"
-                    outcome = "impact"
-                    interaction_id = 5
-
+                mTot = 2*mAgg
+                # Is the monomer in the excavated mass? ---> Assume no? May read a bit better into this.
+                # - Brauer, Dullemond & Henning (2008)  
+                # - Hasegawa et al. (2021) - Simulations, v_frag is function of mass ratio. 
+                # For now, lets assume bullets: 2x mAgg of the collision partner are excavated such that the collision partner is the new home aggregate.
+                # the impactor burries itself deep enough such that the excavated mass is solely originating from the collision partner.
+                self.monomer.homeAggregate.prop["mAgg"] = self.monomer.homeAggregate.prop["mCol"] - mTot/2
+                message = "home aggregate impacted"
+                outcome = "impact"
+                interaction_id = 5
 
             else:
                 # In all the other cases the home aggregate is catastrophically disrupted.
-
-                    self.monomer.homeAggregate.prop["mAgg"] = self.determineFragmentMass(max([mAgg, mCol]))
-
-                    # In which fragment is the monomer? What is the size of this fragment?
-
-                    message = "catastrophic disruption"
-                    outcome = "fragmentation"
-                    interaction_id = 2
+                self.monomer.homeAggregate.prop["mAgg"] = self.determineFragmentMass(max([mAgg, mCol]))
+                # In which fragment is the monomer? What is the size of this fragment?
+                message = "catastrophic disruption"
+                outcome = "fragmentation"
+                interaction_id = 2
                     
-
-            # to include: determine the new depth of the monomer and whether it is exposed
-
         else: # otherwise we update it. Coagulation takes place.
             self.monomer.homeAggregate.prop["mAgg"] += self.monomer.homeAggregate.prop["mCol"]*self.monomer.homeAggregate.prop["NCol"]
             message = "coagulation with {:.1e} particle(s) of size {:.1e} m".format(self.monomer.homeAggregate.prop["NCol"], self.monomer.homeAggregate.prop["sCol"])
@@ -1939,7 +1780,6 @@ class Model:
 
 
         # In any case the new home aggregate size is calculated via the new mass.
-
         self.monomer.homeAggregate.prop["sAgg"] = (3*self.monomer.homeAggregate.prop["mAgg"]/(4*np.pi*self.monomer.homeAggregate.prop["rhoAgg"]))**(1/3)   
         
         if self.monomer.homeAggregate.prop["sAgg"]<self.monomer.prop["sMon"]:
@@ -2049,11 +1889,7 @@ class Model:
         This method should only be used after the main integrateMonomer loop.
         """
         
-        
-        #diffMass *= self.monomer.prop["mMon"] # gain of molecule X in kg
-            # Not needed as we are now tracing the ice mass in kg.
-        
-        self.monomer.ele_sol=np.zeros((len(self.monomer.ice_sol[self.disk.iceList[0]]),5))
+        self.monomer.ele_sol=np.zeros((len(self.monomer.ice_sol[self.disk.iceList[0]]),5)) # TODO: Get rid of the magic element number.
         
         #self.monomer.ice_sol[self.disk.iceList[n]]
         
@@ -2097,11 +1933,7 @@ class Model:
             
             # prodimo uses surface, we use cross section
             diffMass = cross*ads -surface*tds -cross*pds
-            
-            #extrafact = self.monomer.prop["mMon"]*self.environment["nd"]/self.environment["rhod"]
-            #
-            #diffMass *= 1#extrafact#############################
-
+        
             qFactor = np.nan
         else:
 
@@ -2123,8 +1955,6 @@ class Model:
                 tds = self.rateDesorptionThermal(t, r, z, iceName, dustT=None, iceList=iceList)
                 diffMass = -surface*tds
                 # Otherwise nothing happens
-                #diffMass = 0
-                #tds = 0
                 pds = 0
                 ads = 0
                 qFactor = 0
@@ -2133,14 +1963,6 @@ class Model:
         if self.legacyIce:
             return diffMass, ads, tds, pds, qFactor # In the old formalism we can return the rates
         else:
-            # Otherwise we store them in a class variable.
-            # if self.t_track==0.:
-            #    iceInd = self.disk.iceList.index(iceName)
-            #    self.rateTrack[iceInd, 0] = cross*ads
-            #    self.rateTrack[iceInd, 1] = surface*tds
-            #    self.rateTrack[iceInd, 2] = cross*pds
-            #    print("Clause triggered at t={:.2f}".format(t_in/(self.sTOyr*1e3)))
-            
             return diffMass
         
 
@@ -2177,26 +1999,24 @@ class Model:
                 ratio = 0
             else:
                 ratio = diffMassPrelim[self.disk.iceList[n]]/(self.monomer.ice_sol[self.disk.iceList[n]])[-1]
-           
-            ratioBool = ratio>self.fice
+            
             # is the relative mass change for species n exceeded?
-            
-            floorBool = self.delta_t>deltaTfloor 
+            ratioBool = ratio>self.fice
+
             # have we not yet reached the minimum allowed timestep?
-            
-            bareBool = (self.monomer.ice_sol[self.disk.iceList[n]])[-1]<1e-50 
+            floorBool = self.delta_t>deltaTfloor 
+
             # Was the monomer not just iceless?
-            #if bareBool:
-                #print("ding")
-            notConstTimeBool = not self.constTimestep[0] 
+            bareBool = (self.monomer.ice_sol[self.disk.iceList[n]])[-1]<1e-50 
+
             # do we not use constant timestep?
+            notConstTimeBool = not self.constTimestep[0] 
             
             n += 1
             
             if (ratioBool) and (floorBool) and (notConstTimeBool) and (not bareBool):
                 self.delta_t /= 10 
                 # Then we adjust the timestep if needed; note that we do this AFTER the shortest timescale has been chosen.
-          
                 if self.delta_t<deltaTfloor:
                     self.delta_t=deltaTfloor
                     zeroAccumulateFlag[self.disk.iceList[n-1]] = True
@@ -2211,7 +2031,6 @@ class Model:
                 # In this way we prevent unnecesary decreases in timestep down to the floor of delta_t.
                 zeroAccumulateFlag[self.disk.iceList[n-1]] = True
             else:
-                #print(n-1, self.disk.iceList[n-1])
                 zeroAccumulateFlag[self.disk.iceList[n-1]] = False                
         
         #------------------------------------------------------------------------
@@ -2252,8 +2071,6 @@ class Model:
                 if -diffMassPrelimZ[self.disk.iceList[n]]>=(self.monomer.ice_sol[self.disk.iceList[n]])[-1]:
                     iceNew = (self.monomer.ice_sol[self.disk.iceList[n]])[-1] + diffMassPrelimZ[self.disk.iceList[n]]
                     (self.monomer.ice_sol[self.disk.iceList[n]])[-1] = max([0,iceNew])                   
-                
-                    #print("Zeroclause triggered")
 
                     (self.monomer.ice_sol["ads"+self.disk.iceList[n]])[-1] = adsPrelimZ[self.disk.iceList[n]]
                     (self.monomer.ice_sol["tds"+self.disk.iceList[n]])[-1] = tdsPrelimZ[self.disk.iceList[n]]
@@ -2310,9 +2127,6 @@ class Model:
         
         success=False
         self.printFlag = True
-        
-        #methodExp, methodCov = self.integrator
-        
 
         t_eval = None
 
@@ -2332,13 +2146,6 @@ class Model:
             success = sol["success"]
         else:
             success = False
-
-    #if (not success)and(not self.printIntWarning):
-        #    print(sol)
-        #    raise RuntimeError("Ice integration did not converge at t = {:.2f} kyr".format(t_in))
-            #print("Warning: ODE integrator did not converge at r = {:.2f} AU".format(r_in))
-            #self.printIntWarning = True
-            #print(sol)
       
         return sol, success
     
@@ -2360,10 +2167,6 @@ class Model:
         7 - Convergence error.
         """
    
-        #abunArr = np.array([self.environment["gasAbun"+self.disk.iceList[n]] for n in range(self.iceNum)])
-        #abunFact = np.mean(abunArr)/np.max(abunArr)
-        
-        # originally we had just the monomer mass #######################
         self.numFact = self.monomer.iceTot_sol[-1]*self.iceScaleFact*self.monomer.prop["mMon"] # kg/potatoes
         y0 = np.array([(self.monomer.ice_sol[self.disk.iceList[n]])[-1]/self.numFact for n in range(self.iceNum)])
         # such that y0 is in potatoes
@@ -2375,7 +2178,6 @@ class Model:
 
         t_start = 0
         t_stop = delt
-        #print(t_start, t_stop, t_in)
         
         integratorList = ["LSODA", "Radau", "BDF"] # LSODA should be most flexible, but can be worth trying others in case of failure (Radau & BDF are specifically written for stiff systems).
         I = len(integratorList)
@@ -2452,14 +2254,11 @@ class Model:
         At each timestep, we run this algorithm to update the abundances in the ice.
         """
         
-        #print("b -",self.monomer.exposed)
         if self.legacyIce:
             self.doIceEvolutionMyOwn(r_in, z_in, t_in)
         else:
             self.doIceEvolutionSciPy(r_in, z_in, t_in)
-        #print("a -",self.monomer.exposed)
-
-        
+ 
 #################################################################################################
 # Timestep functions
 #################################################################################################
@@ -2512,12 +2311,6 @@ class Model:
             tauCol = 1/np.sum(self.colRates)
         else:
             tauCol = 1/np.sum(self.effColRates)
-        #print(self.effColRates)
-        #print(np.sum(self.effColRates))
-       
-        #print(tauCol/self.sTOyr)
-        #if minimum:
-        #    tauCol = np.min(tauCol)
         
         return tauCol
     
@@ -2593,9 +2386,7 @@ class Model:
             if self.diffusion:
                 tauTub = self.tauTub(t, r, z)
                 tauList.append(self.ftub*tauTub)
-        
-        #print("")
-        #print(np.array(tauList)/self.sTOyr)
+
         # Note that the timescale is chosen to be shorter if this is required by the ice formation algorithm.
         if (self.collisions or self.migration):
             tauMin = min(tauList)
@@ -2622,7 +2413,7 @@ class Model:
         
         tauSol = np.zeros((R,Z,6))
         
-        self.initGradients(size=size) ##############! Repeat whenever size changes!!!
+        self.initGradients(size=size) # Repeat whenever size changes!!!
         self.initDensities()
     
         
@@ -2652,11 +2443,6 @@ class Model:
         """
         If integrateMonomer receives randomize=True, we draw our monomer based on the 2D density distribution of the background model.
         """
-
-        #r0 = 101
-        #
-        #while r0>(self.para["Rtaper"]/self.auTOm):
-        #    r0 = (self.innerRdraw/np.random.power(self.para["epsilon"]))
         
         r0 = loguniform.rvs(self.innerRdraw, self.outerRdraw)
         z0 = r0*(0.2*np.random.rand()-0.1)
@@ -2696,7 +2482,6 @@ class Model:
             print(" ")
         
         # Input management
-        
         if randomize==None:
             randomize = bool(self.paraDict["randomize"])
         
@@ -2719,8 +2504,6 @@ class Model:
         else:
             self.t_stop = t_stop_in/1e3 # convert to kyr
         
-        
-        
         # Choose random number setup
         # --------------------------
         if self.deterministic:
@@ -2742,11 +2525,10 @@ class Model:
         if not self.supverbose:
             print("Monomer seed is: "+str(self.seedStart))
         np.random.seed(self.seedNo)
+        
         # Initialize monomer
         # ------------------
         self.monomer = Monomer(self, r0, z0, size=size)
-        #self.monomer.homeAggregate.prop["sAgg"] = size
-        #self.monomer.prop["sMon"] = size
 
         self.monomer.r_sol = [self.monomer.initR]
         self.monomer.z_sol = [self.monomer.initZ]
@@ -2877,7 +2659,6 @@ class Model:
             if self.store==0:
                 self.storeEnvironment(r_now, z_now, t_now)
            
-            #print(self.delta_t/(self.sTOyr))
             # delta_t is in seconds, because we only use it inside the routine. 
 
             # Do ice formation
