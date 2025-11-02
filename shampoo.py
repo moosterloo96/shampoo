@@ -4,24 +4,18 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 import prodimopy.read as pread
-import prodimopy.plot as pplot
 from scipy.interpolate import RectBivariateSpline
-from scipy.optimize import root_scalar
 from scipy.integrate import solve_ivp
 from scipy.stats import loguniform
 from time import process_time
 from scipy.special import expn
-from timeout_decorator import timeout
 import os
 import pickle
+import traceback
 
-# Shampoo main file.
-#
-# Written and documented by Mark Oosterloo
-#
-# Version: 15-03-2024
+# TODO: Refactor into separate classes.
 
-class Model:
+class Model():
     """
     The master class which stores all the information of the full simulation.
     """
@@ -241,28 +235,14 @@ class Model:
             path = parameter_folder
         else:
             path = ""
-            
-        paraDict = pd.read_csv(path+"shampooInput.csv", header=None, index_col=0, usecols=(0,1), squeeze=True, comment="#", delimiter="\t", skipinitialspace=True)
+        paraDict = dict(pd.read_csv(path+"shampooInput.csv", header=None, usecols=(0,1), comment="#", delimiter="\t",
+                               skipinitialspace=True).values)
         for item in paraDict.keys():
             if paraDict[item]=="True":
                 paraDict[item] = True
             elif paraDict[item]=="False":
                 paraDict[item] = False
-    
-#         for item in paraDict.keys():
-            
-#             if "True" in paraDict[item]:
-#                 paradict[item] = True
-#             elif "False" in paraDict[item]:
-#                 paraDict[item] = False
-#             elif any(paraDict[item]) in range(0,9):
-#                 if "." in paraDict[item]:
-#                     paraDict[item] = float(paraDict[item])
-#                 else:
-#                     paraDict[item] = int(paraDict[item])
-        
-        
-        
+
         return paraDict
             
     
@@ -1204,7 +1184,7 @@ class Model:
             
         if (self.debug)and(self.monomer.homeAggregate.prop["sAgg"]>self.grainSizes[-1]):
             print("Relative velocity report:")
-            print("sagg: ",sagg, "scol:", scol, "magg:", magg, "mcol:", mcol)
+            print("sagg: ",sagg, "scol:", scol)
             print("Brownian:", v1)
             print("Radial:", v2)
             print("Settling:", v3)
@@ -1223,7 +1203,7 @@ class Model:
     
     def sigCol(self, t, r, z, s=None):
         """
-        Calculates the collisional cross section between the home aggregate and a particle of size s.
+        Calculates the collisional cross-section between the home aggregate and a particle of size s.
         """
     
         if s is None:
@@ -2304,15 +2284,13 @@ class Model:
                 dydt[n] = 0
 
         return dydt
-    
-    @timeout(1.5)
+
     def advanceIceMantle(self, t_start, t_stop, y0, position, integrator):
-        
+
         success=False
         self.printFlag = True
         
         #methodExp, methodCov = self.integrator
-        
 
         t_eval = None
 
@@ -2342,7 +2320,7 @@ class Model:
       
         return sol, success
     
-    
+    # TODO: Reinstate the timeout decorator.
     def doIceEvolutionSciPy(self, r_in, z_in, t_in):
         """
         New code which solves the time evolution of the monomer ice using pre-existing ODE-integration routines.  
@@ -2363,11 +2341,11 @@ class Model:
         #abunArr = np.array([self.environment["gasAbun"+self.disk.iceList[n]] for n in range(self.iceNum)])
         #abunFact = np.mean(abunArr)/np.max(abunArr)
         
-        # originally we had just the monomer mass #######################
+        # originally we had just the monomer mass
         self.numFact = self.monomer.iceTot_sol[-1]*self.iceScaleFact*self.monomer.prop["mMon"] # kg/potatoes
         y0 = np.array([(self.monomer.ice_sol[self.disk.iceList[n]])[-1]/self.numFact for n in range(self.iceNum)])
         # such that y0 is in potatoes
-        
+
         if self.migration or self.collisions:
             delt = self.delta_t/(1e3*self.sTOyr)
         else:
@@ -2383,12 +2361,14 @@ class Model:
         
         success = False
         self.monomer.exitIndex = 7 # Exit index 7 is the worst, it means an unhandled convergence error.
-        
+
         if r_in>1:
             while ((not success) and (i<I)):
                 try:
                     sol, success = self.advanceIceMantle(t_start, t_stop, y0, (r_in, z_in, t_in), integrator=integratorList[i])
-                except:
+                except Exception as e:
+                    print(f"Exception occurred while advancing the ice: {e}")
+                    traceback.print_exc()
                     # If integrators take too long, we keep the ice mantle from previous timestep.
                     self.monomer.exitIndex = 5 # For now we have a timeout of the routines.
                     # Success remains false in this case.
