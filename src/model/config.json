@@ -1,0 +1,33 @@
+{
+    "species": [
+        "H2O",
+        "CO",
+        "CO2",
+        "CH4",
+        "NH3",
+        "H2S"
+    ],
+    "disk_folder": "../ShampooBackground",
+    "parameter_folder": null,
+    "verbose": null,
+    "migration": null,
+    "diffusion": null,
+    "collisions": null,
+    "trackice": null,
+    "debug": false,
+    "save_csv": [
+        false,
+        null
+    ],
+    "phi": null,
+    "breakIce": false,
+    "legacyIce": false,
+    "colEq": false,
+    "storage_style": 0,
+    "readsorption": false,
+    "supverbose": false,
+    "qTest": false,
+    "qTestAds": false,
+    "qTestMig": false,
+    "activeML": true
+}

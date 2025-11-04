@@ -3,30 +3,38 @@ from src.model.entities.disk import Disk
 
 class MainInitializer:
 
-    def initialize(self, disk=None, species=["H2O", "CO", "CO2", "CH4", "NH3", "H2S"], disk_folder="../ShampooBackground",
-                 parameter_folder=None, verbose=None, migration=None, diffusion=None, collisions=None, trackice=None,
-                 debug=False, save_csv=[False, None], phi=None, breakIce=False, legacyIce=False, colEq=False,
-                 storage_style=0, readsorption=False, supverbose=False, qTest=False, qTestAds=False, qTestMig=False,
-                 activeML=True):
-        """
-        entities: Instance of Disk which contains the output from ProDiMo. If None a new instance is created.
-        monomer: Instance of Monomer. If None a new instance is created.
-        species: The molecules which are considered in calculating the composition.
-        disk_folder: The folder which contains the ProDiMo output of this model.
+    # def initialize(self, disk=None, species=["H2O", "CO", "CO2", "CH4", "NH3", "H2S"], disk_folder="../ShampooBackground",
+    #              parameter_folder=None, verbose=None, migration=None, diffusion=None, collisions=None, trackice=None,
+    #              debug=False, save_csv=[False, None], phi=None, breakIce=False, legacyIce=False, colEq=False,
+    #              storage_style=0, readsorption=False, supverbose=False, qTest=False, qTestAds=False, qTestMig=False,
+    #              activeML=True):
+    #     """
+    #     entities: Instance of Disk which contains the output from ProDiMo. If None a new instance is created.
+    #     monomer: Instance of Monomer. If None a new instance is created.
+    #     species: The molecules which are considered in calculating the composition.
+    #     disk_folder: The folder which contains the ProDiMo output of this model.
+    #
+    #     verbose:
+    #         1 - only warings
+    #         2 - warnings and initialization/integration notifications
+    #
+    #     migration: switch for radial and vertical migration of the monomers.
+    #     diffusion: if migration is true, this switch determines whether we calculate pure aerodynamic drag or also turbulent diffusion.
+    #     collisions: switch for the coagulation module
+    #     trackice: switch for the condensation/evaportation of ices
+    #     debug: debug mode; currently unused
+    #     save_csv: if save_csv[0]==True we regularize the output and write it to a .csv. Data is taken at at the times (in kyr) given in array-like save_csv[1].
+    #     """
+    def initialize(self, disk, config):
 
-        verbose:
-            1 - only warings
-            2 - warnings and initialization/integration notifications
+        # TODO: Add value validation
+        # TODO: Do cleanup and sorting of stuff between <name>shampooInput.csv, and config.json
+        # TODO: Rename .csv
+        # TODO: Add functionality to pickle and unpickle a disk model such that we don't have to re-load and re-interpolate.
+        # TODO: Refactor into separate methods.
+        # TODO: DOC.
 
-        migration: switch for radial and vertical migration of the monomers.
-        diffusion: if migration is true, this switch determines whether we calculate pure aerodynamic drag or also turbulent diffusion.
-        collisions: switch for the coagulation module
-        trackice: switch for the condensation/evaportation of ices
-        debug: debug mode; currently unused
-        save_csv: if save_csv[0]==True we regularize the output and write it to a .csv. Data is taken at at the times (in kyr) given in array-like save_csv[1].
-        """
-
-        if supverbose:
+        if config["supverbose"]:
             self.supverbose = True
         else:
             self.supverbose = False
@@ -34,8 +42,8 @@ class MainInitializer:
         if not self.supverbose:
             self.print_titlecard()
 
-            print("Attempting to load parameters from folder: ", parameter_folder)
-        self.paraDict = self.loadPara(parameter_folder=parameter_folder)
+            print("Attempting to load parameters from folder: ", config["parameter_folder"])
+        self.paraDict = self.loadPara(parameter_folder=config["parameter_folder"])
 
         if not self.supverbose:
             print("Attempt succesful!")
@@ -43,18 +51,18 @@ class MainInitializer:
         if self.supverbose:
             self.verbose = -1000
         else:
-            if verbose == None:
+            if config["verbose"] == None:
                 self.verbose = int(self.paraDict["verbose"])
             else:
-                self.verbose = verbose
+                self.verbose = config["verbose"]
 
         ### Debugging levers
-        self.breakIce = breakIce
-        self.legacyIce = legacyIce
-        self.readsorption = readsorption
-        self.qTest = qTest
-        self.qTestAds = qTestAds
-        self.qTestMig = qTestMig
+        self.breakIce = config["breakIce"]
+        self.legacyIce = config["legacyIce"]
+        self.readsorption = config["readsorption"]
+        self.qTest = config["qTest"]
+        self.qTestAds = config["qTestAds"]
+        self.qTestMig = config["qTestMig"]
 
         ### Setting the parameters for the ice integration
         self.integrator = ("LSODA", "LSODA")  # 0 is exposed, 1 is unexposed
@@ -68,47 +76,47 @@ class MainInitializer:
 
         ### Functionality levers!
         # For dynamics...
-        if migration == None:
+        if config["migration"]  == None:
             self.migration = bool(self.paraDict["migration"])  # DYNAMICS
         else:
-            self.migration = migration
+            self.migration = config["migration"]
 
         # ...collisions...
-        if collisions == None:
+        if config["collisions"] == None:
             self.collisions = bool(self.paraDict["collisions"])  # KINETICS
         else:
-            self.collisions = collisions
+            self.collisions = config["collisions"]
 
         # and ice evolution!
-        if trackice == None:
+        if config["trackice"] == None:
             self.trackice = bool(self.paraDict["trackice"])
         else:
-            self.trackice = trackice
+            self.trackice = config["trackice"]
 
         try:
             self.colEq = bool(self.paraDict["col_eq"])
         except:
-            self.colEq = colEq
+            self.colEq = config["colEq"]
         try:
             self.activeML = bool(self.paraDict["activeML"])
         except:
-            self.activeML = activeML
+            self.activeML = config["activeML"]
 
         self.printStatistics = bool(self.paraDict["print_stat"])
         if self.verbose > -1:
             tic = process_time()
             print("Initializing model")
 
-        self.diskFolder = disk_folder
-        self.debug = debug
-        self.save_csv = save_csv[0]
-        self.eval_csv = save_csv[1]
+        self.diskFolder = config["disk_folder"]
+        self.debug = config["debug"]
+        self.save_csv = config["save_csv"][0]
+        self.eval_csv = config["save_csv"][1]
 
         self.pisoBenchmark = bool(self.paraDict["piso"])
         self.cieslaBenchmark = bool(self.paraDict["ciesla"])
 
         if disk == None:
-            self.disk = Disk(species=species, folder=self.diskFolder)
+            self.disk = Disk(species=config["species"], folder=self.diskFolder)
         else:
             self.disk = disk
             self.diskFolder = disk.diskFolder
@@ -122,7 +130,7 @@ class MainInitializer:
         try:
             self.store = int(self.paraDict["storage_style"])
         except:
-            self.store = storage_style  # Do we want to keep track of the local environment of the monomer/home aggregate?
+            self.store = config["storage_style"]  # Do we want to keep track of the local environment of the monomer/home aggregate?
 
         if self.store == 0:
             self.trackListEnv = ["rhog", "rhod", "Tg", "Td", "chiRT", "nd"]
@@ -173,7 +181,7 @@ class MainInitializer:
         self.fdyn = float(self.paraDict["fdyn"])
         self.fice = float(self.paraDict["fice"])
 
-        self.phi = phi  # Auxiliary parameter which allows for easy changing of the porosity.
+        self.phi = config["phi"]  # Auxiliary parameter which allows for easy changing of the porosity.
 
         self.diffType = "mcfost"
         self.desType = "new"  # Use old (Piso+ 2015) or new (Cuppen+ 2017) desorption formalism.
