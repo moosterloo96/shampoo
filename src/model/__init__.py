@@ -10,9 +10,12 @@ class Model(InitMixin, DiskInterface, CollisionsMixin, DynamicsMixin, IceEvoluti
     The master class which stores all the information of the full simulation.
     """
 
-    def __init__(self,
-                 disk=None):
+    def __init__(self, disk=None, user_config=None):
         super().__init__()
-        config = self.load_config()
 
+        if user_config is None:
+            config = self.load_config()
+        else:
+            config = self.complement_config(user_config)
+        print(config)
         self.initialize(disk=disk, config=config)

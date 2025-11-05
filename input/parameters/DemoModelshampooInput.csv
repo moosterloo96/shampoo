@@ -1,64 +1,46 @@
-### Physical process levers		
-fixR	False	# Fix radial position?
-fixZ	False	# Fix vertical position?
-migration	True	# Do dynamical transport (only turbulent diffusion if diffusion == True)
-diffusion	True	# Do turbulent diffusion AND drag if migration == True.
-collisions	True	# Do collisional processing?
-trackice	True	# Do formation/evaporaion of ice?
-
-### Initial conditions and boundary conditions
-t_stop	100	    # Integration time (in kyr)
-r0	60	    # Initial radial position (in AU)
-z0	0	# Initial vertical position (in AU)
-r_inner_cutoff	0.5	# Inner cutoff radius within which we terminate the integration (in AU)
-
-### Stochastic options
-deterministic	True	# Use same seed for stochastic events. Leads to deterministic monomer behavior
-seed	4745937	# Seed to use if determinstic==True
-randomize	False	# Put monomers at a random position?
-rInnerDraw	50	    # Inner radial distance (in AU) if we pick random initial monomer position.
-rOuterDraw	100	    # Outer radial distance (in AU) if we pick random initial monomer position.
-col_eq	False	# Draw monomer depth and aggregate size from home aggregate size expected from collisional equilibrium?
-
-### Verbose and storage options
-verbose	0	# Verbose level. 0 is default.
-print_stat	True	# Print function timing statistics (avg running times) at the end of the simulation
-storage_style	0	# 0: Track environment 1: Use compact storage (requires backtracking environment)
-
-### Timestep functions
-const_delt	False	# Use constant timestep instead of adative timestep
-const_delt_val	1	# Constant timestep size (in yr) to use.
-delta_t_floor	0.01	# Lower bound in timestep size (in yr) when using adaptive timesteps.
-
-### Numerics auxiliary parameters.		
-ftub	0.01	# Maximum fraction of turbulent timescale for adaptive timestep
-fcol	0.1	    # Maximum fraction of collision timescale for adaptive timestep
-fdyn	0.001	# Maximum fraction of drift timescale for adaptive timestep
-fice	0.01	# Maximum fraction of ice mass change timescale for adaptive timestep
-
-### Benchmarking modes	
-piso	False	# Set True if you want to benchmark with Piso+ 2015
-ciesla	False	# Set True if we want to do the settling test from Krijt & Ciesla 2016
-
-### Monomer properties	
-sMon	5E-08	# Monomer size (in m)
-zMon	0	    # Initial monomer depth (in m) if colEq==False. (Monomer starts bare)
-rhoMon	2094	# Monomer material density (Woitke+ 2016)
-Nads	1.5E+019	# Adsorption/desorption site density on monolayer (Woitke+ 2009)
-Nact	2	    # Number of actively desorbing ice monolayers (Woitke+ 2009)
-yield	0.001	# Photodesorption yield rate (Oberg 2009)
-phi	1	# Home aggregate filling factor
-
-### Collisional model		
-rat_group	0.1	    # Collision mass ratio where we start using grouping formalism of (Ormel & Spaans 2008; Krijt & Ciesla 2016).
-rat_erode	0.1	    # Collision mass ratio where fragmentation and erosion transition (Krijt & Ciesla 2016)
-v_frag	1	    # Fragmentation velocity (Krijt & Ciesla 2016. 1 m/s might be better (Guttler et al. 2010; Birnstiel et al. 2010)
-x_frag	1.83	# Power law slope of fragmentation products (Birnstiel+ 2010)
-
-### Ice formation model		
-sig_mol	2E-19	# Molecular cross section used in the calculation of mfp (Okuzumi+ 2012; Krijt+ 2018)
-NadsRef	1E+019	# Reference number of number of adsorption sites (e.g. Piso+ 2015)
-alphaStick	0.5	    # Sticking efficiency parameters (He+ 2016)
+Key	Value	Comment
+fixR	False	Fix radial position?
+fixZ	False	Fix vertical position?
+migration	True	Do dynamical transport (only turbulent diffusion if diffusion == True)
+diffusion	True	Do turbulent diffusion AND drag if migration == True.
+collisions	True	Do collisional processing?
+trackice	True	Do formation/evaporation of ice?
+t_stop	100	Integration time (in kyr)
+r0	60	Initial radial position (in AU)
+z0	0	Initial vertical position (in AU)
+r_inner_cutoff	0.5	Inner cutoff radius within which we terminate the integration (in AU)
+deterministic	True	Use same seed for stochastic events. Leads to deterministic monomer behavior
+seed	4745937	Seed to use if deterministic==True
+randomize	False	Put monomers at a random position?
+rInnerDraw	50	Inner radial distance (in AU) if we pick random initial monomer position.
+rOuterDraw	100	Outer radial distance (in AU) if we pick random initial monomer position.
+col_eq	False	Draw monomer depth and aggregate size from home aggregate size expected from collisional equilibrium?
+verbose	0	Verbose level. 0 is default.
+print_stat	True	Print function timing statistics (avg running times) at the end of the simulation
+storage_style	0	0: Track environment 1: Use compact storage (requires backtracking environment)
+const_delt	False	Use constant timestep instead of adaptive timestep
+const_delt_val	1	Constant timestep size (in yr) to use.
+delta_t_floor	0.01	Lower bound in timestep size (in yr) when using adaptive timesteps.
+ftub	0.01	Maximum fraction of turbulent timescale for adaptive timestep
+fcol	0.1	Maximum fraction of collision timescale for adaptive timestep
+fdyn	0.001	Maximum fraction of drift timescale for adaptive timestep
+fice	0.01	Maximum fraction of ice mass change timescale for adaptive timestep
+piso	False	Set True if you want to benchmark with Piso+ 2015
+ciesla	False	Set True if we want to do the settling test from Krijt & Ciesla 2016
+sMon	5E-08	Monomer size (in m)
+zMon	0	Initial monomer depth (in m) if colEq==False. (Monomer starts bare)
+rhoMon	2094	Monomer material density (Woitke+ 2016)
+Nads	1.5E+019	Adsorption/desorption site density on monolayer (Woitke+ 2009)
+Nact	2	Number of actively desorbing ice monolayers (Woitke+ 2009)
+yield	0.001	Photodesorption yield rate (Oberg 2009)
+phi	1	Home aggregate filling factor
+rat_group	0.1	Collision mass ratio where we start using grouping formalism of (Ormel & Spaans 2008; Krijt & Ciesla 2016).
+rat_erode	0.1	Collision mass ratio where fragmentation and erosion transition (Krijt & Ciesla 2016)
+v_frag	1	Fragmentation velocity (Krijt & Ciesla 2016. 1 m/s might be better (Guttler et al. 2010; Birnstiel et al. 2010)
+x_frag	1.83	Power law slope of fragmentation products (Birnstiel+ 2010)
+sig_mol	2E-19	Molecular cross section used in the calculation of mfp (Okuzumi+ 2012; Krijt+ 2018)
+NadsRef	1E+019	Reference number of adsorption sites (e.g. Piso+ 2015)
+alphaStick	0.5	Sticking efficiency parameters (He+ 2016)
 betaStick	0.11	
 gammaStick	0.042	
-zCrit	2	# Critical monomer depth in units of s_m (Oosterloo+ 2023)
+zCrit	2	Critical monomer depth in units of s_m (Oosterloo+ 2023)

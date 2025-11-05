@@ -44,6 +44,7 @@ class InitializeParameters:
         self.sTOMyr = self.sTOyr * 1e6
         self.auTOm = 1.496e11
 
+        # TODO: Move this to the disk class.
         # Adsorption energies and masses
         dataName = np.loadtxt(filepath + "/AdsorptionEnergies.in", dtype="str", comments="#", usecols=(0), encoding=None)
         dataNum = np.loadtxt(filepath + "/AdsorptionEnergies.in", dtype="float", comments="#", usecols=(1, 2),

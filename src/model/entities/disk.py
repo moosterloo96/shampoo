@@ -4,6 +4,7 @@ from scipy.interpolate import RectBivariateSpline
 
 class Disk:
 
+    # TODO: Add config for disk and refactor init.
     def __init__(self, species=["H2", "H2O", "CO"], folder="../BackgroundModels/ShampooCodingPaper/vFrag5",
                  modelName="ProDiMo.out", t_index="{:04d}".format(5), order=1, verbose=-1):
 

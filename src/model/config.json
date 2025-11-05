@@ -7,7 +7,7 @@
         "NH3",
         "H2S"
     ],
-    "disk_folder": "../ShampooBackground",
+    "disk_folder": "../../input/disks/prodimo/vfrag1",
     "parameter_folder": null,
     "verbose": null,
     "migration": null,

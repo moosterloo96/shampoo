@@ -6,7 +6,7 @@ from scipy.stats import loguniform
 from src.model.entities.monomer import Monomer
 
 
-class IntegratorOperations:
+class IntegratorOperations():
     def probeTimescales(self, size, species):
         """
         Calculates the timescales for a monomer of given size (in m) and species (label). t,r,z are in kyr/AU
