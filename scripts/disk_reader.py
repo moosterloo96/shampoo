@@ -23,4 +23,4 @@ pathdict["project"] = "./"
 disk = Disk(species=["H2O", "CO", "CO2", "CH4", "CH3OH", "NH3", "H2S", "SO2", "OCS"], folder=pathdict["disk"], modelName="ProDiMo.out",
                     t_index="{:04d}".format(5))
 
-pickle.dump(disk, open("input/disks/vfrag1_disk.pkl", "wb"))
+pickle.dump(disk, open("../input/disks/vfrag1_disk.pkl", "wb"))

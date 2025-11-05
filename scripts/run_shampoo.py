@@ -20,7 +20,7 @@ pathdict["figures"] = "./output/figures/"
 pathdict["project"] = "."
 
 name = "DemoModel"
-disk = pickle.load(open("./input/disks/vfrag1_disk.pkl", "rb"))
+disk = pickle.load(open("../input/disks/vfrag1_disk.pkl", "rb"))
 config = {
             "parameter_folder": pathdict["input"] + name,
             "verbose": 0
