@@ -23,7 +23,7 @@ if __name__ == "__main__":
     pathdict["figures"] = pathdict["project"] + "/output/figures/"
 
     name = "DemoModel"
-    disk = pickle.load(open("../input/disks/vfrag1_disk.pkl", "rb"))
+    disk = pickle.load(pathdict["project"] + "/input/disks/vfrag1_disk.pkl", "rb")
     config = {
                 "parameter_folder": pathdict["input"] + name,
                 "verbose": 0
