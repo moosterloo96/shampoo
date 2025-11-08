@@ -2,14 +2,14 @@ import json
 
 class LoadConfig:
 
-    def load_config(self, path="src/model/"):
+    def load_config(self, path="../src/model/"):
 
         with open(path + "config.json") as f:
             config = json.load(f)
 
         return config
 
-    def complement_config(self, manual_config, path="src/model/"):
+    def complement_config(self, manual_config, path="../src/model/"):
 
         with open(path + "config.json") as f:
             default_config = json.load(f)

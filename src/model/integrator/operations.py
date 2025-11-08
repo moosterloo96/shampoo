@@ -223,7 +223,7 @@ class IntegratorOperations():
             if not self.supverbose:
                 print(
                     "Integration progress: {:.2f} % complete, estimated time left: {:.2f} s, current step size: {:.1e} yr".format(
-                        progress, self.left, self.delta_t / self.sTOyr) + " " * 8, end="\r")
+                        progress, self.left, self.delta_t / self.sTOyr) + " " * 8)
 
             n = len(self.monomer.t_sol)
             if self.verbose > 2:

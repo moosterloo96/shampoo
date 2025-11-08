@@ -1,3 +1,4 @@
+import concurrent.futures
 import traceback
 
 import numpy as np
@@ -257,9 +258,9 @@ class IceEvolutionOperations:
 
         for n in range(self.iceNum):
             y_in[n] = max(y_in[n], 0)
-            iceList[self.disk.iceList[n]] = y_in[
-                                                n] * self.numFact  # This is more conistent with ice bookkeeping in self.iceMassChange. Maybe get rid of dictionaries altogether?
-            # convert in icelist from potatoes to kg
+            iceList[self.disk.iceList[n]] = y_in[n] * self.numFact  # This is more consistent with ice bookkeeping in
+            # self.iceMassChange. Maybe get rid of dictionaries altogether?
+            # Also converts in iceList from potatoes to kg
 
         for n in range(self.iceNum):
             # note we have to convert from kg/s to potatoes/kyr
@@ -274,43 +275,36 @@ class IceEvolutionOperations:
 
 
     def advanceIceMantle(self, t_start, t_stop, y0, position, integrator):
-        success = False
         self.printFlag = True
-
-        # methodExp, methodCov = self.integrator
-
-        t_eval = None
 
         t_eval = np.linspace(t_start, t_stop, 2)
 
-        if self.monomer.exposed:
-            atol = self.atol[0]
-            rtol = self.rtol[0]
-            method = integrator
-            sol = solve_ivp(self.scipyAuxFunc, (t_start, t_stop), y0, t_eval=t_eval, args=position, method=method,
-                            atol=atol, rtol=rtol)
-        else:
-            atol = self.atol[1]
-            rtol = self.rtol[1]
-            method = integrator
-            sol = solve_ivp(self.scipyAuxFunc, (t_start, t_stop), y0, t_eval=t_eval, args=position, method=method,
-                            atol=atol, rtol=rtol)
+        # Define the settings for the integrator.
+        atol = self.atol[0] if self.monomer.exposed else self.atol[1]
+        rtol = self.rtol[0] if self.monomer.exposed else self.atol[0]
+        method = integrator
+
+        # Define an auxiliary function to run the ivp.
+        def run_ivp():
+            return solve_ivp(self.scipyAuxFunc, (t_start, t_stop), y0, t_eval=t_eval, args=position, method=method,
+                        atol=atol, rtol=rtol)
+
+        executor = concurrent.futures.ThreadPoolExecutor()
+        future = executor.submit(run_ivp)
+        try:
+            sol = future.result(timeout=1.5)
+        except concurrent.futures.TimeoutError as e:
+            future.cancel()
+            executor.shutdown(wait=False)
+            raise TimeoutError("Integration did not converge.") from e
+
         if sol["status"] == 0:
             success = sol["success"]
         else:
             success = False
 
-        # if (not success)and(not self.printIntWarning):
-        #    print(sol)
-        #    raise RuntimeError("Ice integration did not converge at t = {:.2f} kyr".format(t_in))
-        # print("Warning: ODE integrator did not converge at r = {:.2f} AU".format(r_in))
-        # self.printIntWarning = True
-        # print(sol)
-
         return sol, success
 
-
-    # TODO: Reinstate the timeout decorator.
     def doIceEvolutionSciPy(self, r_in, z_in, t_in):
         """
         New code which solves the time evolution of the monomer ice using pre-existing ODE-integration routines.
@@ -342,11 +336,12 @@ class IceEvolutionOperations:
             delt = self.t_stop
 
         t_start = 0
-        t_stop = delt
+        t_stop = float(delt) # delt is np.float64
         # print(t_start, t_stop, t_in)
 
-        integratorList = ["LSODA", "Radau",
-                          "BDF"]  # LSODA should be most flexible, but can be worth trying others in case of failure (Radau & BDF are specifically written for stiff systems).
+        integratorList = ["LSODA", "Radau", "BDF"]
+        # LSODA should be most flexible, but can be worth trying others in case of failure because
+        # Radau & BDF are written for stiff systems.
         I = len(integratorList)
         i = 0
 
@@ -358,9 +353,8 @@ class IceEvolutionOperations:
                 try:
                     sol, success = self.advanceIceMantle(t_start, t_stop, y0, (r_in, z_in, t_in),
                                                          integrator=integratorList[i])
-                except Exception as e:
-                    print(f"Exception occurred while advancing the ice: {e}")
-                    traceback.print_exc()
+                except TimeoutError as e:
+                    print(f"Integration timed out: {e}")
                     # If integrators take too long, we keep the ice mantle from previous timestep.
                     self.monomer.exitIndex = 5  # For now we have a timeout of the routines.
                     # Success remains false in this case.
@@ -372,7 +366,7 @@ class IceEvolutionOperations:
                     sol["t"] = np.linspace(t_start, t_stop, 2)
                 i += 1
 
-                # An extra clause to reset ice mantles strongly affected by UV radiation (sometimes causes numerical issues).
+            # An extra clause to reset ice mantles strongly affected by UV radiation (sometimes causes numerical issues).
             if (not success) and (self.environment["chiRT"] > 1) and (self.monomer.exposed):
                 self.monomer.exitIndex = 6
                 sol = {}
